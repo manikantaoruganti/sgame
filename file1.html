@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reptile Game (Mobile + PC)</title>
+    <title>Reptile Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -13,16 +13,14 @@
             justify-content: center;
             height: 100vh;
             background-color: #222;
+            position: relative;
         }
         .game-board {
             position: relative;
-            width: 90vw; 
-            max-width: 400px;
-            height: 90vw;
-            max-height: 400px;
+            width: 400px;
+            height: 400px;
             background-color: #333;
             border: 5px solid white;
-            overflow: hidden;
         }
         .reptile-segment {
             position: absolute;
@@ -44,47 +42,63 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             margin-top: 20px;
         }
-        .row {
+        .direction-row {
             display: flex;
+            justify-content: center;
         }
-        button {
+        .control-button {
             width: 60px;
             height: 60px;
-            margin: 5px;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 10px;
-            border: none;
-            background: #444;
+            margin: 10px;
+            background-color: #444;
             color: white;
+            border: 2px solid white;
+            font-size: 30px;
+            text-align: center;
+            line-height: 60px;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
-        button:active {
-            background: #666;
+        .control-button:active {
+            background-color: #555;
+        }
+        .control-button:hover {
+            background-color: #666;
+        }
+        .copyright {
+            position: absolute;
+            bottom: 10px;
+            font-size: 14px;
+            color: white;
         }
     </style>
 </head>
 <body>
 
     <div class="game-board" id="board"></div>
-
     <div class="controls">
-        <button onclick="changeDirection('UP')">⬆️</button>
-        <div class="row">
-            <button onclick="changeDirection('LEFT')">⬅️</button>
-            <button onclick="changeDirection('RIGHT')">➡️</button>
+        <div class="direction-row">
+            <div class="control-button" id="up">↑</div>
         </div>
-        <button onclick="changeDirection('DOWN')">⬇️</button>
+        <div class="direction-row">
+            <div class="control-button" id="left">←</div>
+            <div class="control-button" id="right">→</div>
+        </div>
+        <div class="direction-row">
+            <div class="control-button" id="down">↓</div>
+        </div>
     </div>
+
+    <div class="copyright" id="copyright"></div>
 
     <script>
         const boardSize = 20;
-        const boardLimit = 400 / 20;
+        const boardLimit = 400 / boardSize;
         let reptile = [{ x: 10, y: 10 }];
-        let food = getRandomPosition();
+        let food = getValidFoodPosition();
         let direction = "RIGHT";
         let speed = 200;
         let gameInterval;
@@ -96,6 +110,23 @@
             };
         }
 
+        function getValidFoodPosition() {
+            let allPositions = [];
+            for (let x = 1; x < boardLimit - 1; x++) {
+                for (let y = 1; y < boardLimit - 1; y++) {
+                    allPositions.push({ x, y });
+                }
+            }
+
+            let availablePositions = allPositions.filter(pos =>
+                !reptile.some(segment => segment.x === pos.x && segment.y === pos.y)
+            );
+
+            if (availablePositions.length === 0) return null; // No space left
+
+            return availablePositions[Math.floor(Math.random() * availablePositions.length)];
+        }
+
         function drawGame() {
             const board = document.getElementById("board");
             board.innerHTML = "";
@@ -103,8 +134,8 @@
             reptile.forEach((segment, index) => {
                 const div = document.createElement("div");
                 div.className = "reptile-segment";
-                div.style.left = segment.x * 20 + "px";
-                div.style.top = segment.y * 20 + "px";
+                div.style.left = segment.x * boardSize + "px";
+                div.style.top = segment.y * boardSize + "px";
 
                 if (index === 0) {
                     div.style.backgroundColor = "darkgreen";
@@ -114,33 +145,38 @@
                 board.appendChild(div);
             });
 
-            const foodDiv = document.createElement("div");
-            foodDiv.className = "food";
-            foodDiv.style.left = food.x * 20 + "px";
-            foodDiv.style.top = food.y * 20 + "px";
-            board.appendChild(foodDiv);
+            if (food) {
+                const foodDiv = document.createElement("div");
+                foodDiv.className = "food";
+                foodDiv.style.left = food.x * boardSize + "px";
+                foodDiv.style.top = food.y * boardSize + "px";
+                board.appendChild(foodDiv);
+            }
         }
 
         function moveReptile() {
             let newHead = { ...reptile[0] };
+
             if (direction === "UP") newHead.y -= 1;
             if (direction === "DOWN") newHead.y += 1;
             if (direction === "LEFT") newHead.x -= 1;
             if (direction === "RIGHT") newHead.x += 1;
 
-            if (reptile.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
-                gameOver();
-                return;
-            }
+            // **Wrap-Around Logic**
+            if (newHead.x < 0) newHead.x = boardLimit - 1;
+            if (newHead.x >= boardLimit) newHead.x = 0;
+            if (newHead.y < 0) newHead.y = boardLimit - 1;
+            if (newHead.y >= boardLimit) newHead.y = 0;
 
-            if (newHead.x < 0 || newHead.x >= boardLimit || newHead.y < 0 || newHead.y >= boardLimit) {
+            if (reptile.some(seg => seg.x === newHead.x && seg.y === newHead.y)) {
                 gameOver();
                 return;
             }
 
             let newBody = [newHead, ...reptile];
-            if (newHead.x === food.x && newHead.y === food.y) {
-                food = getRandomPosition();
+
+            if (food && newHead.x === food.x && newHead.y === food.y) {
+                food = getValidFoodPosition();
                 speed *= 0.95;
                 restartGameLoop();
             } else {
@@ -160,7 +196,7 @@
             clearInterval(gameInterval);
             alert("Game Over! Try Again.");
             reptile = [{ x: 10, y: 10 }];
-            food = getRandomPosition();
+            food = getValidFoodPosition();
             speed = 200;
             startGame();
         }
@@ -173,16 +209,20 @@
         }
 
         function startGame() {
-            document.addEventListener("keydown", (event) => {
-                if (event.key === "ArrowUp") changeDirection("UP");
-                if (event.key === "ArrowDown") changeDirection("DOWN");
-                if (event.key === "ArrowLeft") changeDirection("LEFT");
-                if (event.key === "ArrowRight") changeDirection("RIGHT");
-            });
+            document.getElementById("up").addEventListener("click", () => changeDirection("UP"));
+            document.getElementById("down").addEventListener("click", () => changeDirection("DOWN"));
+            document.getElementById("left").addEventListener("click", () => changeDirection("LEFT"));
+            document.getElementById("right").addEventListener("click", () => changeDirection("RIGHT"));
 
             restartGameLoop();
         }
 
+        function updateCopyright() {
+            const copyrightText = `Copyright © ${new Date().getFullYear()} Manikanta Venkateswarlu`;
+            document.getElementById("copyright").textContent = copyrightText;
+        }
+
+        updateCopyright();
         startGame();
     </script>
 
