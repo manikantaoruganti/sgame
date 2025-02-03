@@ -3,24 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realistic Reptile Game</title>
+    <title>Reptile Game (Mobile + PC)</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
             background-color: #222;
         }
         .game-board {
             position: relative;
-            width: 400px;
-            height: 400px;
+            width: 90vw; 
+            max-width: 400px;
+            height: 90vw;
+            max-height: 400px;
             background-color: #333;
             border: 5px solid white;
             overflow: hidden;
@@ -32,7 +31,6 @@
             background-color: green;
             border-radius: 50%;
             border: 2px solid black;
-            transition: all 0.1s ease-in-out;
         }
         .food {
             position: absolute;
@@ -42,16 +40,50 @@
             border-radius: 50%;
             border: 2px solid white;
         }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+        }
+        button {
+            width: 60px;
+            height: 60px;
+            margin: 5px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 10px;
+            border: none;
+            background: #444;
+            color: white;
+            cursor: pointer;
+        }
+        button:active {
+            background: #666;
+        }
     </style>
 </head>
 <body>
 
     <div class="game-board" id="board"></div>
 
+    <div class="controls">
+        <button onclick="changeDirection('UP')">⬆️</button>
+        <div class="row">
+            <button onclick="changeDirection('LEFT')">⬅️</button>
+            <button onclick="changeDirection('RIGHT')">➡️</button>
+        </div>
+        <button onclick="changeDirection('DOWN')">⬇️</button>
+    </div>
+
     <script>
-        const boardSize = 20; // Grid size (20x20)
-        const boardLimit = 400 / 20; // Game board size in grid units
-        let reptile = [{ x: 10, y: 10 }]; // Initial position
+        const boardSize = 20;
+        const boardLimit = 400 / 20;
+        let reptile = [{ x: 10, y: 10 }];
         let food = getRandomPosition();
         let direction = "RIGHT";
         let speed = 200;
@@ -68,14 +100,12 @@
             const board = document.getElementById("board");
             board.innerHTML = "";
 
-            // Draw reptile
             reptile.forEach((segment, index) => {
                 const div = document.createElement("div");
                 div.className = "reptile-segment";
                 div.style.left = segment.x * 20 + "px";
                 div.style.top = segment.y * 20 + "px";
 
-                // Make head a different color
                 if (index === 0) {
                     div.style.backgroundColor = "darkgreen";
                     div.style.border = "3px solid yellow";
@@ -84,7 +114,6 @@
                 board.appendChild(div);
             });
 
-            // Draw food
             const foodDiv = document.createElement("div");
             foodDiv.className = "food";
             foodDiv.style.left = food.x * 20 + "px";
@@ -99,26 +128,23 @@
             if (direction === "LEFT") newHead.x -= 1;
             if (direction === "RIGHT") newHead.x += 1;
 
-            // Check collision with itself
             if (reptile.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
                 gameOver();
                 return;
             }
 
-            // Check collision with walls
             if (newHead.x < 0 || newHead.x >= boardLimit || newHead.y < 0 || newHead.y >= boardLimit) {
                 gameOver();
                 return;
             }
 
-            // Check if food is eaten
             let newBody = [newHead, ...reptile];
             if (newHead.x === food.x && newHead.y === food.y) {
                 food = getRandomPosition();
-                speed *= 0.95; // Speed up game
+                speed *= 0.95;
                 restartGameLoop();
             } else {
-                newBody.pop(); // Remove last part
+                newBody.pop();
             }
 
             reptile = newBody;
@@ -139,12 +165,19 @@
             startGame();
         }
 
+        function changeDirection(newDirection) {
+            if (newDirection === "UP" && direction !== "DOWN") direction = "UP";
+            if (newDirection === "DOWN" && direction !== "UP") direction = "DOWN";
+            if (newDirection === "LEFT" && direction !== "RIGHT") direction = "LEFT";
+            if (newDirection === "RIGHT" && direction !== "LEFT") direction = "RIGHT";
+        }
+
         function startGame() {
             document.addEventListener("keydown", (event) => {
-                if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
-                if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
-                if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
-                if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+                if (event.key === "ArrowUp") changeDirection("UP");
+                if (event.key === "ArrowDown") changeDirection("DOWN");
+                if (event.key === "ArrowLeft") changeDirection("LEFT");
+                if (event.key === "ArrowRight") changeDirection("RIGHT");
             });
 
             restartGameLoop();
