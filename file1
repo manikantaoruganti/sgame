@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Reptile Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #222;
+        }
+        .game-board {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            background-color: #333;
+            border: 5px solid white;
+            overflow: hidden;
+        }
+        .reptile-segment {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: green;
+            border-radius: 50%;
+            border: 2px solid black;
+            transition: all 0.1s ease-in-out;
+        }
+        .food {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-board" id="board"></div>
+
+    <script>
+        const boardSize = 20; // Grid size (20x20)
+        const boardLimit = 400 / 20; // Game board size in grid units
+        let reptile = [{ x: 10, y: 10 }]; // Initial position
+        let food = getRandomPosition();
+        let direction = "RIGHT";
+        let speed = 200;
+        let gameInterval;
+
+        function getRandomPosition() {
+            return {
+                x: Math.floor(Math.random() * boardLimit),
+                y: Math.floor(Math.random() * boardLimit),
+            };
+        }
+
+        function drawGame() {
+            const board = document.getElementById("board");
+            board.innerHTML = "";
+
+            // Draw reptile
+            reptile.forEach((segment, index) => {
+                const div = document.createElement("div");
+                div.className = "reptile-segment";
+                div.style.left = segment.x * 20 + "px";
+                div.style.top = segment.y * 20 + "px";
+
+                // Make head a different color
+                if (index === 0) {
+                    div.style.backgroundColor = "darkgreen";
+                    div.style.border = "3px solid yellow";
+                }
+
+                board.appendChild(div);
+            });
+
+            // Draw food
+            const foodDiv = document.createElement("div");
+            foodDiv.className = "food";
+            foodDiv.style.left = food.x * 20 + "px";
+            foodDiv.style.top = food.y * 20 + "px";
+            board.appendChild(foodDiv);
+        }
+
+        function moveReptile() {
+            let newHead = { ...reptile[0] };
+            if (direction === "UP") newHead.y -= 1;
+            if (direction === "DOWN") newHead.y += 1;
+            if (direction === "LEFT") newHead.x -= 1;
+            if (direction === "RIGHT") newHead.x += 1;
+
+            // Check collision with itself
+            if (reptile.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
+                gameOver();
+                return;
+            }
+
+            // Check collision with walls
+            if (newHead.x < 0 || newHead.x >= boardLimit || newHead.y < 0 || newHead.y >= boardLimit) {
+                gameOver();
+                return;
+            }
+
+            // Check if food is eaten
+            let newBody = [newHead, ...reptile];
+            if (newHead.x === food.x && newHead.y === food.y) {
+                food = getRandomPosition();
+                speed *= 0.95; // Speed up game
+                restartGameLoop();
+            } else {
+                newBody.pop(); // Remove last part
+            }
+
+            reptile = newBody;
+            drawGame();
+        }
+
+        function restartGameLoop() {
+            clearInterval(gameInterval);
+            gameInterval = setInterval(moveReptile, speed);
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            alert("Game Over! Try Again.");
+            reptile = [{ x: 10, y: 10 }];
+            food = getRandomPosition();
+            speed = 200;
+            startGame();
+        }
+
+        function startGame() {
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+                if (event.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+                if (event.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+                if (event.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+            });
+
+            restartGameLoop();
+        }
+
+        startGame();
+    </script>
+
+</body>
+</html>
