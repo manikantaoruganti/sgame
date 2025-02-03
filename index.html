@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reptile Game</title>
+    <title>Realistic Snake Game</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -26,9 +26,10 @@
             position: absolute;
             width: 20px;
             height: 20px;
-            background-color: green;
+            background: linear-gradient(45deg, #006400, #008000);
             border-radius: 50%;
             border: 2px solid black;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Shadow for depth */
         }
         .food {
             position: absolute;
@@ -137,9 +138,12 @@
                 div.style.left = segment.x * boardSize + "px";
                 div.style.top = segment.y * boardSize + "px";
 
+                // Tail fading effect
                 if (index === 0) {
                     div.style.backgroundColor = "darkgreen";
-                    div.style.border = "3px solid yellow";
+                    div.style.border = "3px solid yellow"; // Head specific styling
+                } else {
+                    div.style.backgroundColor = "green"; // Tail styling
                 }
 
                 board.appendChild(div);
@@ -228,3 +232,5 @@
 
 </body>
 </html>
+
+            
